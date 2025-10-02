@@ -17,13 +17,17 @@ def data_section(settings):
     st.subheader("Market Data")
     col1, col2, col3 = st.columns(3)
     with col1:
-        sym = st.text_input("Symbol", value="SPY")
+        sym = st.text_input("Symbol", value="SPY", key="data_symbol")
     with col2:
-        period = st.selectbox("Period", ["5d", "1mo", "3mo", "6mo", "1y"], index=1)
+        period = st.selectbox("Period",
+                              ["5d", "1mo", "3mo", "6mo", "1y"],
+                              index=1, key="data_period")
     with col3:
-        interval = st.selectbox("Interval", ["1d", "1h", "30m", "15m"], index=0)
+        interval = st.selectbox("Interval",
+                                ["1d", "1h", "30m", "15m"],
+                                index=0, key="data_interval")
 
-    if st.button("Fetch"):
+    if st.button("Fetch", key="data_fetch"):
         try:
             df = fetch_history(PriceRequest(symbol=sym, period=period, interval=interval))
             st.dataframe(df.tail(30))
@@ -37,14 +41,17 @@ def journal_section():
     with st.expander("Add entry", expanded=True):
         c1, c2, c3 = st.columns([1, 1, 1])
         with c1:
-            symbol = st.text_input("Symbol", value="SPY")
+            symbol = st.text_input("Symbol", value="SPY", key="journal_symbol")
         with c2:
-            direction = st.selectbox("Direction", ["long", "short", "neutral"], index=0)
+            direction = st.selectbox("Direction",
+                                     ["long", "short", "neutral"],
+                                     index=0, key="journal_direction")
         with c3:
-            strategy = st.text_input("Strategy", value="CSP")  # credit put spread by default
-        notes = st.text_area("Notes", placeholder="Why this trade? Plan? Risk?")
-        tags_raw = st.text_input("Tags (comma-separated)", placeholder="#theta, #earnings")
-        if st.button("Save entry", type="primary"):
+            strategy = st.text_input("Strategy", value="CSP", key="journal_strategy")  # credit put spread
+        notes = st.text_area("Notes", placeholder="Why this trade? Plan? Risk?", key="journal_notes")
+        tags_raw = st.text_input("Tags (comma-separated)", placeholder="#theta, #earnings", key="journal_tags")
+
+        if st.button("Save entry", type="primary", key="journal_save"):
             tags = [t.strip() for t in tags_raw.split(",") if t.strip()]
             try:
                 entry = create_entry(symbol=symbol, direction=direction, strategy=strategy, notes=notes, tags=tags)

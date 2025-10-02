@@ -1,6 +1,9 @@
 import streamlit as st
 from src.settings import Settings
 from src.ui.components import header, journal_sidebar, data_section, journal_section
+from src.journal.storage import init_db
+init_db()  # safe; it’s guarded
+
 
 def main():
     st.set_page_config(page_title='AI Trader / Journal', layout='wide')

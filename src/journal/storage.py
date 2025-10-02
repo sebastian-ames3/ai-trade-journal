@@ -4,17 +4,22 @@ from sqlmodel import SQLModel, create_engine, Session, select
 
 from .models import JournalEntry
 from src.settings import Settings
+from src.journal.models import JournalEntry
 
 _engine = None
+_db_initialized = False
+
 
 def init_db(settings: Optional[Settings] = None) -> None:
     """Initialize DB engine and create tables if they do not exist."""
-    global _engine
-    if _engine:
-        return
-    settings = settings or Settings.from_env()
-    _engine = create_engine(settings.db_url, echo=False)
-    SQLModel.metadata.create_all(_engine)
+    global _engine, _db_initialized
+    if _engine is None:
+        # SQLite file in project root; adjust path as needed
+        _engine = create_engine("sqlite:///ai_trader.sqlite", echo=False)
+
+    if not _db_initialized:
+        SQLModel.metadata.create_all(_engine)
+        _db_initialized = True
 
 def _session() -> Session:
     if _engine is None:
@@ -45,13 +50,9 @@ def update_entry(entry_id: int, **patch) -> JournalEntry:
     with _session() as s:
         obj = s.get(JournalEntry, entry_id)
         if obj is None:
-            raise ValueError(f"Entry {entry_id} not found")
+            raise ValueError(f"Journal entry {entry_id} not found")
         for k, v in patch.items():
-            if k == "tags" and isinstance(v, list):
-                obj.tags = v
-            else:
-                setattr(obj, k, v)
-        obj.updated_at = datetime.utcnow()
+            setattr(obj, k, v)
         s.add(obj)
         s.commit()
         s.refresh(obj)

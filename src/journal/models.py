@@ -1,25 +1,27 @@
+from __future__ import annotations
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 from sqlmodel import SQLModel, Field
 
 class JournalEntry(SQLModel, table=True):
     __tablename__ = "journal_entries"
+
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     symbol: str
-    direction: str  # long/short/neutral
-    strategy: str   # e.g., iron fly, credit put spread
+    direction: str
+    strategy: str
     notes: str = ""
-    # Store tags as a comma-separated string for MVP; we can normalize later.
-    tags_csv: str = ""
+    tags_csv: str = ""  # internal storage
 
     @property
     def tags(self) -> List[str]:
-        return [t for t in (self.tags_csv.split(",") if self.tags_csv else []) if t]
+        return [t for t in self.tags_csv.split(",") if t] if self.tags_csv else []
 
     @tags.setter
     def tags(self, values: List[str]) -> None:
-        self.tags_csv = ",".join([v.strip() for v in values if v.strip()])
+        self.tags_csv = ",".join(v.strip() for v in values if v.strip())
+
 

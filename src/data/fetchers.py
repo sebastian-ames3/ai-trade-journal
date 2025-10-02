@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from tenacity import retry, stop_after_attempt, wait_exponential
 import yfinance as yf
 import pandas as pd
-import time
 
 @dataclass
 class PriceRequest:

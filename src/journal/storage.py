@@ -21,7 +21,9 @@ def _session() -> Session:
         init_db()
     return Session(_engine)
 
-def create_entry(*, symbol: str, direction: str, strategy: str, notes: str = "", tags: List[str] | None = None) -> JournalEntry:
+def create_entry(
+    *, symbol: str, direction: str, strategy: str, notes: str = "", tags: Optional[List[str]] = None
+) -> JournalEntry:
     entry = JournalEntry(symbol=symbol, direction=direction, strategy=strategy, notes=notes)
     if tags:
         entry.tags = tags
@@ -31,7 +33,7 @@ def create_entry(*, symbol: str, direction: str, strategy: str, notes: str = "",
         s.refresh(entry)
     return entry
 
-def list_entries(tag: str | None = None) -> List[JournalEntry]:
+def list_entries(tag: Optional[str] = None) -> List[JournalEntry]:
     with _session() as s:
         stmt = select(JournalEntry).order_by(JournalEntry.created_at.desc())
         rows = list(s.exec(stmt))

@@ -47,7 +47,7 @@ def journal_section():
                                      ["long", "short", "neutral"],
                                      index=0, key="journal_direction")
         with c3:
-            strategy = st.text_input("Strategy", value="CSP", key="journal_strategy")  # credit put spread
+            strategy = st.text_input("Strategy", value="CSP", key="journal_strategy")
         notes = st.text_area("Notes", placeholder="Why this trade? Plan? Risk?", key="journal_notes")
         tags_raw = st.text_input("Tags (comma-separated)", placeholder="#theta, #earnings", key="journal_tags")
 

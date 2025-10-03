@@ -1,7 +1,11 @@
 import streamlit as st
+from datetime import date
 from src.settings import Settings
 from src.ui.components import header, journal_sidebar, data_section, journal_section
+from src.journal.storage import list_entries, list_entries_by_status, close_entry, delete_entry
 from src.journal.storage import init_db
+from src.journal.models import JournalEntry
+
 init_db()  # safe; it’s guarded
 
 

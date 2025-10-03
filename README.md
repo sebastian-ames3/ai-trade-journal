@@ -13,6 +13,13 @@ A disciplined trading journal with real-time market data, rate-limit-aware fetch
 > MVP rule: “working > perfect.” We’ll polish UX after the core flow (create → auto-enrich → view/search) is solid.
 
 ---
+## Running the App
+
+After installing dependencies and activating your virtual environment, run the app with:
+
+```bash
+streamlit run src/app.py
+
 
 ## Stack
 - **Python** 3.11+ (works on 3.10; prefer 3.11)

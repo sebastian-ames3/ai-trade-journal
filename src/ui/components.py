@@ -158,7 +158,8 @@ def journal_section():
                 vol_line = None
 
         
-        
+        final_notes = notes
+        tags_norm = ""
         if st.button("Save entry", type="primary", key="journal_save"):
             # Normalize tags into a clean CSV string (no spaces, no empties)
             tags_norm = ",".join([t.strip() for t in (tags_csv or "").split(",") if t.strip()])

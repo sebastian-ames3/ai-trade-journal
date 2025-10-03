@@ -1,10 +1,12 @@
 import streamlit as st
 import numpy as np
 from typing import List
+from datetime import date
 
 from src.data.fetchers import fetch_history, PriceRequest
-from src.journal.storage import create_entry, list_entries, update_entry, init_db
+from src.journal.storage import create_entry, list_entries, update_entry, init_db, close_entry, delete_entry, list_entries_by_status
 from src.data.vol import realized_vol, compare_iv_hv
+from src.journal.models import JournalEntry
 
 
 def header():
@@ -100,16 +102,44 @@ def journal_section():
 
      # ───────────────────────────── Add Entry (only reads vol from session) ─────────────────────────────
     with st.expander("Add entry", expanded=True):
-        c1, c2, c3 = st.columns([1, 1, 1])
+         
+            # Row 1: symbol + entry_action + strategy
+        c1, c2, c3 = st.columns([2, 2, 2])
         with c1:
-            symbol = st.text_input("Symbol", value="SPY", key="journal_symbol")
+            symbol = st.text_input("Symbol", value="", key="journal_symbol")
         with c2:
-            direction = st.selectbox("Direction", ["long", "short", "neutral"], index=0, key="journal_direction")
+             entry_action = st.radio(
+                "Open action",
+                options=["BTO", "STO"],
+                index=0,  # default BTO
+                help="BTO=Buy to open (debit). STO=Sell to open (credit).",
+                horizontal=True,
+            )
         with c3:
-            strategy = st.text_input("Strategy", value="CSP", key="journal_strategy")
+            strategy = st.text_input("Strategy", value="", key="journal_strategy")
+        
+            # Row 2: entry date + price + contracts
+        c4, c5, c6 = st.columns([2, 2, 2])
+        with c4:
+            entry_date = st.date_input("Entry date", value=date.today())
+        with c5:
+            entry_price = st.number_input("Entry price (option premium)", min_value=0.0, step=0.01)
+        with c6:
+            size = st.number_input("Contracts", min_value=1, step=1, value=1)
 
+             # Notes
         notes = st.text_area("Notes", placeholder="Why this trade? Plan? Risk?", key="journal_notes")
-        tags_raw = st.text_input("Tags (comma-separated)", placeholder="#theta, #earnings", key="journal_tags")
+           # Metadata row: tags + direction (moved down here)
+        c7, c8 = st.columns([2, 2])
+        with c7:
+            tags_csv = st.text_input("Tags (comma-separated)", placeholder="#theta, #earnings")
+        with c8:
+            direction = st.selectbox(
+                "Direction (metadata)",
+                options=["neutral", "long", "short"],
+                index=0,
+                help="Just metadata for filtering; not used in P&L.",
+            )
 
         # Build a one-line context if the DATA tab computed it
         vol_line = None
@@ -127,28 +157,106 @@ def journal_section():
             except Exception:
                 vol_line = None
 
+        
+        
         if st.button("Save entry", type="primary", key="journal_save"):
-            tags = [t.strip() for t in tags_raw.split(",") if t.strip()]
+            # Normalize tags into a clean CSV string (no spaces, no empties)
+            tags_norm = ",".join([t.strip() for t in (tags_csv or "").split(",") if t.strip()])
+
             # Auto-embed the context line above the user's notes
             final_notes = f"{vol_line}\n{notes}" if vol_line else notes
-            try:
-                entry = create_entry(symbol=symbol, direction=direction, strategy=strategy, notes=final_notes, tags=tags)
-                st.success(f"Saved entry #{entry.id}")
-            except Exception as e:
-                st.error(f"Failed to save entry: {e}")
+
+        try:
+            entry = create_entry(
+                symbol=symbol,
+                strategy=strategy,
+                entry_action=entry_action,   # "BTO" or "STO"
+                entry_date=entry_date,
+                entry_price=entry_price,
+                size=size,
+                direction=direction,
+                notes=final_notes,
+                tags_csv=tags_norm,
+            )
+            st.success(f"Saved entry #{entry.id}")
+        except Exception as e:
+            st.error(f"Failed to save entry: {e}")
 
     st.markdown("---")
     tag_filter = st.session_state.get("tag_search") or None
-    rows = list_entries(tag=tag_filter)
-    if not rows:
+    entries = list_entries(tag=tag_filter)
+    if not entries:
         st.info("No entries yet.")
-        return
+    else:
+        for entry in entries:
+            with st.container(border=True):
+                st.markdown(f"**#{entry.id}** {entry.symbol}  *{entry.direction}*  ({entry.strategy})")
+                st.caption(f"Created: {entry.created_at}   •   Updated: {entry.updated_at}")
+                if entry.tags_csv:
+                    st.write("Tags:", entry.tags_csv)
+                if entry.notes:
+                    st.write(entry.notes)
 
-    for e in rows:
-        with st.container(border=True):
-            st.markdown(f"**#{e.id}** · {e.symbol} · *{e.direction}* · {e.strategy}  ")
-            st.caption(f"Created: {e.created_at} · Updated: {e.updated_at}")
-            if e.tags:
-                st.write("Tags:", ", ".join(e.tags))
-            if e.notes:
-                st.write(e.notes)
+    st.subheader("Open trades")
+
+    open_entries = list_entries_by_status("open")
+    if not open_entries:
+        st.info("No open trades.")
+    else:
+        for entry in open_entries:
+            header = f"#{entry.id} {entry.symbol} {entry.entry_action} @ {entry.entry_price} (contracts {entry.size})"
+            with st.expander(header):
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    exit_price = st.number_input(
+                        f"Exit price (#{entry.id})",
+                        min_value=0.0,
+                        value=float(entry.entry_price),
+                        step=0.01,
+                    )
+                with col2:
+                    exit_dt = st.date_input(f"Exit date (#{entry.id})", value=date.today())
+                with col3:
+                    if st.button(f"Mark closed (#{entry.id})"):
+                        close_entry(entry.id, exit_price=exit_price, exit_date=exit_dt)
+                        st.success("Closed. Reload the page to refresh lists.")
+
+                if st.button(f"Delete trade (#{entry.id})", type="secondary"):
+                    delete_entry(entry.id)
+                    st.warning("Deleted. Reload to refresh.")
+
+    st.subheader("Closed trades & stats")
+    closed_entries = list_entries_by_status("closed")
+
+    if not closed_entries:
+        st.info("No closed trades yet.")
+    else:
+        # table
+        rows = []
+        wins = 0
+        total_pl = 0.0
+        for entry in closed_entries:
+            pl = entry.realized_pl or 0.0
+            total_pl += pl
+            if pl > 0:
+                wins += 1
+            rows.append({
+                "id": entry.id,
+                "symbol": entry.symbol,
+                "action": entry.entry_action,     # BTO/STO
+                "direction": entry.direction,     # metadata
+                "entry": entry.entry_price,
+                "exit": entry.exit_price,
+                "contracts": entry.size,
+                "P&L": pl,
+                "R": entry.r_multiple,
+                "days": entry.holding_days,
+                "tags": entry.tags_csv,
+        })
+        st.dataframe(rows, use_container_width=True)
+
+        # quick KPIs
+        win_rate = round(100 * wins / len(closed_entries), 1)
+        st.metric("Closed trades", len(closed_entries))
+        st.metric("Win rate", f"{win_rate}%")
+        st.metric("Realized P&L", f"{round(total_pl, 2)}")

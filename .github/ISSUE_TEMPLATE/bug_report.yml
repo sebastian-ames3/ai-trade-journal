@@ -1,0 +1,82 @@
+﻿name: "🐞 Bug report"
+description: "Report a reproducible problem in the AI Trader / Journal app"
+title: "[Bug]: <short summary>"
+labels: ["bug", "needs-triage"]
+assignees: []
+body:
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-checks
+      options:
+        - label: I searched existing issues to avoid duplicates
+          required: true
+        - label: I can reproduce this on the latest `main`
+          required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph summary of the bug.
+      placeholder: Example — App hangs on 'Running...' after submitting a trade.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps so we can reproduce the bug.
+      placeholder: |
+        1. Launch: `streamlit run app.py`
+        2. Click "New Trade" (key="new_trade_btn")
+        3. Enter ticker "EQT", Direction "Call", Size "1"
+        4. Click "Save"
+        5. Observe spinner never finishes
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: Save completes and trade appears in Journal table.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: Spinner never stops; no error in UI.
+    validations:
+      required: true
+  - type: input
+    id: app_version
+    attributes:
+      label: App version / git commit
+      placeholder: e.g., 23f1a0b on main
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: e.g., 3.11.9 (check `python --version`)
+  - type: input
+    id: streamlit
+    attributes:
+      label: Streamlit version
+      placeholder: e.g., 1.38.0 (check `pip show streamlit`)
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: e.g., Windows 10 22H2
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / traceback
+      description: Paste the full error from the terminal if available.
+      render: shell
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra notes / screenshots
+      description: Optional context that helps triage.
+

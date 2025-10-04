@@ -1,0 +1,47 @@
+name: "✨ Feature request"
+description: "Propose a feature or enhancement to the AI Trader / Journal app"
+title: "[Feature]: <short summary>"
+labels: ["enhancement", "needs-triage"]
+assignees: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / user story
+      placeholder: As a trader, I want to tag trades so I can filter by strategy.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should the app do? UI controls, data changes, etc.
+      placeholder: Add 'Tags' multi-select in 'New Trade' form; store in DB; add sidebar filter.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Clear, testable outcomes.
+      placeholder: |
+        - Can add 1..N tags when creating a trade
+        - Journal list can filter by one or more tags
+        - Tags persist in SQLite and appear on reload
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Out of scope
+      placeholder: e.g., No tag suggestions powered by AI (future).
+  - type: input
+    id: design
+    attributes:
+      label: Sketch / design link (optional)
+      placeholder: e.g., Figma/PNG link
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / constraints
+      description: Rate limits, privacy, performance, etc.

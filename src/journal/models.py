@@ -48,24 +48,29 @@ class JournalEntry(SQLModel, table=True):
     # What the close action should be, given entry_action
         return "STC" if self.entry_action == "BTO" else "BTC"
 
-@property
-def holding_days(self) -> Optional[int]:
-    if not self.exit_date:
-        return None
-    return (self.exit_date - self.entry_date).days
+    @property
+    def holding_days(self) -> Optional[int]:
+        if not self.exit_date:
+            return None
+        return (self.exit_date - self.entry_date).days
 
-@property
-def realized_pl(self) -> Optional[float]:
-    """Options P&L with 100x contract multiplier.
-    BTO -> STC:   (exit - entry) * contracts * 100
-    STO -> BTC:   (entry - exit) * contracts * 100
-    """
-    if self.status != "closed" or self.exit_price is None:
+    @property
+    def realized_pl(self) -> Optional[float]:
+        """Options P&L with 100x contract multiplier.
+        BTO -> STC:   (exit - entry) * contracts * 100
+        STO -> BTC:   (entry - exit) * contracts * 100
+        """
+        if self.status != "closed" or self.exit_price is None:
+            return None
+        multiplier = 100
+        if self.entry_action == "BTO":
+            pnl = (self.exit_price - self.entry_price) * self.size * multiplier
+        else:  # STO
+            pnl = (self.entry_price - self.exit_price) * self.size * multiplier
+        return round(pnl, 2)
+    
+    @property
+    def r_multiple(self) -> Optional[float]:
+        # TODO: define actual implementation
         return None
-    multiplier = 100
-    if self.entry_action == "BTO":
-        pnl = (self.exit_price - self.entry_price) * self.size * multiplier
-    else:  # STO
-        pnl = (self.entry_price - self.exit_price) * self.size * multiplier
-    return round(pnl, 2)
 
